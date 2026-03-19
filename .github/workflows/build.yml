@@ -1,7 +1,11 @@
 name: One-Click Build (DLL & App)
 
 on:
-  workflow_dispatch: # This adds the "Run workflow" button in GitHub
+  workflow_dispatch:
+
+# This fixes the Node.js 20 deprecation warning
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -14,7 +18,7 @@ jobs:
         uses: jurplel/install-qt-action@v3
         with:
           version: '5.15.2'
-          arch: 'win32_mingw81' # 32-bit is required for most J2534 apps
+          arch: 'win32_mingw81'
           
       - name: Build Wrapper DLL
         run: |
