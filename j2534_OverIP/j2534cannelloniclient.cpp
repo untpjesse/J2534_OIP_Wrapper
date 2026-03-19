@@ -290,9 +290,9 @@ long J2534CannelloniClient::PassThruOpen(const void* pName, unsigned long* pDevi
         if(isValidHostString(static_cast<const char*>(pName)))host = static_cast<const char*>(pName);
         else host = this->defaultHost.data();
         std::string tmpPort((const char *)pName);
-        if(tmpPort.contains("20000"))port = 20000;
-        else if(tmpPort.contains("20001"))port = 20001;
-        else if(tmpPort.contains("20002"))port = 20002;
+      if(tmpPort.find("20000") != std::string::npos)port = 20000;
+        else if(tmpPort.find("20001") != std::string::npos)port = 20001;
+        else if(tmpPort.find("20002") != std::string::npos)port = 20002;
     }
 
     cbor_utils::map_put_string(cb_map_root, ExPipeClient::KEY_Param1, host);
