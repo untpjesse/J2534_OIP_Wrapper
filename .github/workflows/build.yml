@@ -1,0 +1,37 @@
+name: One-Click Build (DLL & App)
+
+on:
+  workflow_dispatch: # This adds the "Run workflow" button in GitHub
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '5.15.2'
+          arch: 'win32_mingw81' # 32-bit is required for most J2534 apps
+          
+      - name: Build Wrapper DLL
+        run: |
+          cd j2534_OverIP
+          qmake j2534_OverIP.pro
+          mingw32-make release
+          
+      - name: Build GUI App
+        run: |
+          cd j2534_OverIP_App
+          qmake j2534_OverIP_App.pro
+          mingw32-make release
+          
+      - name: Upload Compiled Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: Compiled-J2534-Windows
+          path: |
+            j2534_OverIP/release/*.dll
+            j2534_OverIP_App/release/*.exe
