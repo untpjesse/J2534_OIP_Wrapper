@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive # This ensures cn-cbor is downloaded if it's a submodule
       
       # Download and extract a true 32-bit MinGW compiler, auto-overwriting conflicts
       - name: Setup 32-bit MinGW
@@ -25,6 +27,15 @@ jobs:
         with:
           version: '5.15.2'
           arch: 'win32_mingw81'
+          
+      - name: Build cn-cbor
+        run: |
+          cd cn-cbor
+          mkdir build
+          cd build
+          cmake -G "MinGW Makefiles" -DCMAKE_C_COMPILER="C:/mingw32/bin/gcc.exe" -DCMAKE_CXX_COMPILER="C:/mingw32/bin/g++.exe" ..
+          C:\mingw32\bin\mingw32-make.exe
+          copy libcn-cbor.a ..\..\
           
       - name: Build Wrapper DLL
         run: |
