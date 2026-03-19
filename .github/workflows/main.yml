@@ -13,25 +13,30 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
       
-      # Installs Qt AND Qt's official 32-bit MinGW 8.1.0 compiler
-      - name: Install Qt and Official 32-bit MinGW
+      # Download and extract a true 32-bit MinGW compiler, auto-overwriting conflicts
+      - name: Setup 32-bit MinGW
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/niXman/mingw-builds-binaries/releases/download/13.2.0-rt_v11-rev1/i686-13.2.0-release-posix-dwarf-ucrt-rt_v11-rev1.7z" -OutFile "mingw32.7z"
+          7z x mingw32.7z -oC:\ -y
+          echo "C:\mingw32\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          
+      - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
           version: '5.15.2'
           arch: 'win32_mingw81'
-          tools: 'tools_mingw81'
           
       - name: Build Wrapper DLL
         run: |
           cd j2534_OverIP
-          qmake j2534_OverIP.pro
-          mingw32-make release
+          qmake j2534_OverIP.pro QMAKE_CXX="C:/mingw32/bin/g++.exe" QMAKE_CC="C:/mingw32/bin/gcc.exe" QMAKE_LINK="C:/mingw32/bin/g++.exe"
+          C:\mingw32\bin\mingw32-make.exe release
           
       - name: Build GUI App
         run: |
           cd j2534_OverIP_App
-          qmake j2534_OverIP_App.pro
-          mingw32-make release
+          qmake j2534_OverIP_App.pro QMAKE_CXX="C:/mingw32/bin/g++.exe" QMAKE_CC="C:/mingw32/bin/gcc.exe" QMAKE_LINK="C:/mingw32/bin/g++.exe"
+          C:\mingw32\bin\mingw32-make.exe release
           
       - name: Upload Compiled Files
         uses: actions/upload-artifact@v4
