@@ -13,7 +13,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
       
-      # Download and extract a true 32-bit MinGW compiler, auto-overwriting conflicts
+      # Download and extract a true 32-bit MinGW compiler
       - name: Setup 32-bit MinGW
         run: |
           Invoke-WebRequest -Uri "https://github.com/niXman/mingw-builds-binaries/releases/download/13.2.0-rt_v11-rev1/i686-13.2.0-release-posix-dwarf-ucrt-rt_v11-rev1.7z" -OutFile "mingw32.7z"
@@ -25,16 +25,26 @@ jobs:
         with:
           version: '5.15.2'
           arch: 'win32_mingw81'
+
+      - name: Patch Source Code
+        run: |
+          # Fix C++23 .contains() usage for older compilers in j2534cannelloniclient.cpp
+          $clientFile = "j2534_OverIP\j2534cannelloniclient.cpp"
+          if (Test-Path $clientFile) {
+            (Get-Content $clientFile) -replace '\.contains\("(\d+)"\)', '.find("$1") != std::string::npos' | Set-Content $clientFile
+            Write-Host "Patched .contains() in $clientFile"
+          }
           
       - name: Download and Build cn-cbor
         run: |
           git clone https://github.com/jimsch/cn-cbor.git
-          # Swap the Linux network header for the Windows network header
-          (Get-Content cn-cbor\src\cn-cbor.c) -replace '<arpa/inet.h>', '<winsock2.h>' | Set-Content cn-cbor\src\cn-cbor.c
+          # Patch ALL .c files to use winsock2.h instead of arpa/inet.h
+          Get-ChildItem -Path cn-cbor\src\*.c | ForEach-Object {
+              (Get-Content $_.FullName) -replace '<arpa/inet.h>', '<winsock2.h>' | Set-Content $_.FullName
+          }
           cd cn-cbor
           mkdir build
           cd build
-          # Disable tests so it only builds the library we need
           cmake -G "MinGW Makefiles" -DCMAKE_C_COMPILER="C:/mingw32/bin/gcc.exe" -DCMAKE_CXX_COMPILER="C:/mingw32/bin/g++.exe" -DCN_CBOR_BUILD_TESTS=OFF ..
           C:\mingw32\bin\mingw32-make.exe
           copy libcn-cbor.a ..\..\
