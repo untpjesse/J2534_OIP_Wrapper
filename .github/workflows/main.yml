@@ -29,10 +29,13 @@ jobs:
       - name: Download and Build cn-cbor
         run: |
           git clone https://github.com/jimsch/cn-cbor.git
+          # Swap the Linux network header for the Windows network header
+          (Get-Content cn-cbor\src\cn-cbor.c) -replace '<arpa/inet.h>', '<winsock2.h>' | Set-Content cn-cbor\src\cn-cbor.c
           cd cn-cbor
           mkdir build
           cd build
-          cmake -G "MinGW Makefiles" -DCMAKE_C_COMPILER="C:/mingw32/bin/gcc.exe" -DCMAKE_CXX_COMPILER="C:/mingw32/bin/g++.exe" ..
+          # Disable tests so it only builds the library we need
+          cmake -G "MinGW Makefiles" -DCMAKE_C_COMPILER="C:/mingw32/bin/gcc.exe" -DCMAKE_CXX_COMPILER="C:/mingw32/bin/g++.exe" -DCN_CBOR_BUILD_TESTS=OFF ..
           C:\mingw32\bin\mingw32-make.exe
           copy libcn-cbor.a ..\..\
           
