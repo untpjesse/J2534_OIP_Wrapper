@@ -3,7 +3,6 @@ name: One-Click Build (DLL & App)
 on:
   workflow_dispatch:
 
-# This fixes the Node.js 20 deprecation warning
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -14,6 +13,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
       
+      # Forces the runner to use the 32-bit compiler
+      - name: Setup MinGW 32-bit
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x86
+          
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
