@@ -47,8 +47,9 @@ jobs:
           cd build
           cmake -G "MinGW Makefiles" -DCMAKE_C_COMPILER="C:/mingw32/bin/gcc.exe" -DCMAKE_CXX_COMPILER="C:/mingw32/bin/g++.exe" -DCN_CBOR_BUILD_TESTS=OFF ..
           C:\mingw32\bin\mingw32-make.exe
-          # Search for the library and copy it to the root directory
-          Get-ChildItem -Path . -Filter "libcn-cbor.a" -Recurse | Copy-Item -Destination ..\..\
+          # Copy to root AND parent of root to satisfy the -L../.. linker flag
+          copy dist\lib\libcn-cbor.a ..\..\
+          copy dist\lib\libcn-cbor.a ..\..\..\
           
       - name: Build Wrapper DLL
         run: |
