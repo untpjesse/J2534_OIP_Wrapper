@@ -38,17 +38,30 @@ jobs:
       - name: Download and Build cn-cbor
         run: |
           git clone https://github.com/jimsch/cn-cbor.git
-          # Patch ALL .c files to use winsock2.h instead of arpa/inet.h
+          
+          # 1. Patch ALL .c files to use winsock2.h instead of arpa/inet.h
           Get-ChildItem -Path cn-cbor\src\*.c | ForEach-Object {
               (Get-Content $_.FullName) -replace '<arpa/inet.h>', '<winsock2.h>' | Set-Content $_.FullName
           }
+          
+          # 2. Disable the Coveralls/Coverage check in CMakeLists.txt to allow Release build
+          (Get-Content cn-cbor\CMakeLists.txt) -replace 'coveralls_turn_on_coverage', '# coveralls_turn_on_coverage' | Set-Content cn-cbor\CMakeLists.txt
+          
           cd cn-cbor
           mkdir build
           cd build
-          # Force Release build to avoid __gcov_merge_add errors
-          cmake -G "MinGW Makefiles" -DCMAKE_C_COMPILER="C:/mingw32/bin/gcc.exe" -DCMAKE_CXX_COMPILER="C:/mingw32/bin/g++.exe" -DCMAKE_BUILD_TYPE=Release -DCN_CBOR_BUILD_TESTS=OFF ..
+          
+          # 3. Build in Release mode with coverage explicitly disabled
+          cmake -G "MinGW Makefiles" `
+            -DCMAKE_C_COMPILER="C:/mingw32/bin/gcc.exe" `
+            -DCMAKE_CXX_COMPILER="C:/mingw32/bin/g++.exe" `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCN_CBOR_BUILD_TESTS=OFF `
+            -DCOVERALLS=OFF ..
+            
           C:\mingw32\bin\mingw32-make.exe
-          # Copy to root AND parent of root to satisfy the -L../.. linker flag
+          
+          # 4. Copy the library to root and parent to satisfy linker
           copy dist\lib\libcn-cbor.a ..\..\
           copy dist\lib\libcn-cbor.a ..\..\..\
           
