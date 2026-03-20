@@ -36,6 +36,33 @@ jobs:
             (Get-Content $clientFile) -replace '\.contains\("(\d+)"\)', '.find("$1") != std::string::npos' | Set-Content $clientFile
           }
           
+          # Add extern "C" to J2534_EXPORT so functions aren't C++ mangled
+          $globalHeader = "j2534_OverIP\j2534_OverIP_global.h"
+          if (Test-Path $globalHeader) {
+            (Get-Content $globalHeader) -replace 'define J2534_EXPORT int32_t __stdcall', 'define J2534_EXPORT extern "C" int32_t __stdcall' | Set-Content $globalHeader
+          }
+          
+          # Rewrite exports.def to map the exact 32-bit stdcall names to the clean undecorated names
+          $defContent = @"
+          LIBRARY j2534_OverIP
+          EXPORTS
+              PassThruOpen=__PassThruOpen@8
+              PassThruClose=__PassThruClose@4
+              PassThruConnect=__PassThruConnect@20
+              PassThruDisconnect=__PassThruDisconnect@4
+              PassThruReadMsgs=__PassThruReadMsgs@16
+              PassThruWriteMsgs=__PassThruWriteMsgs@16
+              PassThruStartPeriodicMsg=__PassThruStartPeriodicMsg@16
+              PassThruStopPeriodicMsg=__PassThruStopPeriodicMsg@8
+              PassThruStartMsgFilter=__PassThruStartMsgFilter@24
+              PassThruStopMsgFilter=__PassThruStopMsgFilter@8
+              PassThruSetProgrammingVoltage=__PassThruSetProgrammingVoltage@12
+              PassThruReadVersion=__PassThruReadVersion@16
+              PassThruGetLastError=__PassThruGetLastError@4
+              PassThruIoctl=__PassThruIoctl@16
+          "@
+          Set-Content -Path "j2534_OverIP\exports.def" -Value $defContent
+          
       - name: Build cn-cbor library
         run: |
           git clone https://github.com/jimsch/cn-cbor.git
