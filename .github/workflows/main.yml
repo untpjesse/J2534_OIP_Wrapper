@@ -58,6 +58,9 @@ jobs:
           
       - name: Build Wrapper DLL
         run: |
+          # Force the linker to check the Windows networking library AFTER cn-cbor
+          Add-Content -Path "j2534_OverIP\j2534_OverIP.pro" -Value "`nLIBS += -lws2_32"
+          
           cd j2534_OverIP
           qmake j2534_OverIP.pro QMAKE_CXX="C:/mingw32/bin/g++.exe" QMAKE_CC="C:/mingw32/bin/gcc.exe" QMAKE_LINK="C:/mingw32/bin/g++.exe"
           C:\mingw32\bin\mingw32-make.exe release
