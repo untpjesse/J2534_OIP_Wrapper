@@ -42,10 +42,13 @@ jobs:
             (Get-Content $j2534cpp) -replace 'uint32_t', 'unsigned long' | Set-Content $j2534cpp
           }
           
-          # Add extern "C" to J2534_EXPORT so functions aren't C++ mangled
-          $globalHeader = "j2534_OverIP\j2534_OverIP_global.h"
-          if (Test-Path $globalHeader) {
-            (Get-Content $globalHeader) -replace 'define J2534_EXPORT int32_t __stdcall', 'define J2534_EXPORT extern "C" int32_t __stdcall' | Set-Content $globalHeader
+          # Add extern "C" directly to the function declarations and definitions
+          $j2534h = "j2534_OverIP\j2534.h"
+          if (Test-Path $j2534h) {
+            (Get-Content $j2534h) -replace 'J2534_EXPORT\s+_PassThru', 'extern "C" J2534_EXPORT _PassThru' | Set-Content $j2534h
+          }
+          if (Test-Path $j2534cpp) {
+            (Get-Content $j2534cpp) -replace 'J2534_EXPORT\s+_PassThru', 'extern "C" J2534_EXPORT _PassThru' | Set-Content $j2534cpp
           }
           
           # Rewrite exports.def to map the exact 32-bit stdcall names to the clean undecorated names
