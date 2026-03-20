@@ -19,8 +19,8 @@ jobs:
       - name: Setup 32-bit MinGW
         run: |
           Invoke-WebRequest -Uri "https://github.com/niXman/mingw-builds-binaries/releases/download/13.2.0-rt_v11-rev1/i686-13.2.0-release-posix-dwarf-ucrt-rt_v11-rev1.7z" -OutFile "mingw32.7z"
-          7z x mingw32.7z -oC:\ -y
-          echo "C:\mingw32\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          7z x mingw32.7z -o"${{ github.workspace }}\mingw" -y
+          echo "${{ github.workspace }}\mingw\mingw32\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
@@ -40,6 +40,12 @@ jobs:
           $j2534cpp = "j2534_OverIP\j2534.cpp"
           if (Test-Path $j2534cpp) {
             (Get-Content $j2534cpp) -replace 'uint32_t', 'unsigned long' | Set-Content $j2534cpp
+          }
+          
+          # Patch J2534_EXPORT macro to include extern "C"
+          $globalH = "j2534_OverIP\j2534_OverIP_global.h"
+          if (Test-Path $globalH) {
+            (Get-Content $globalH) -replace '#\s*define\s+J2534_EXPORT\s+int32_t\s+__stdcall', '#  define J2534_EXPORT extern "C" int32_t __stdcall' | Set-Content $globalH
           }
           
           # Add extern "C" directly to the function declarations and definitions
@@ -83,9 +89,9 @@ jobs:
           
           cd cn-cbor\src
           # Compile object files directly with GCC
-          C:\mingw32\bin\gcc.exe -c *.c -I../include -O2
+          gcc.exe -c *.c -I../include -O2
           # Archive into static library
-          C:\mingw32\bin\ar.exe rcs libcn-cbor.a *.o
+          ar.exe rcs libcn-cbor.a *.o
           
           # Copy to all possible paths the linker might check
           copy libcn-cbor.a $env:GITHUB_WORKSPACE\
@@ -98,14 +104,14 @@ jobs:
           Add-Content -Path "j2534_OverIP\j2534_OverIP.pro" -Value "`nLIBS += -lws2_32"
           
           cd j2534_OverIP
-          qmake j2534_OverIP.pro QMAKE_CXX="C:/mingw32/bin/g++.exe" QMAKE_CC="C:/mingw32/bin/gcc.exe" QMAKE_LINK="C:/mingw32/bin/g++.exe"
-          C:\mingw32\bin\mingw32-make.exe release
+          qmake j2534_OverIP.pro QMAKE_CXX="g++.exe" QMAKE_CC="gcc.exe" QMAKE_LINK="g++.exe"
+          mingw32-make.exe release
           
       - name: Build GUI App
         run: |
           cd j2534_OverIP_App
-          qmake j2534_OverIP_App.pro QMAKE_CXX="C:/mingw32/bin/g++.exe" QMAKE_CC="C:/mingw32/bin/gcc.exe" QMAKE_LINK="C:/mingw32/bin/g++.exe"
-          C:\mingw32\bin\mingw32-make.exe release
+          qmake j2534_OverIP_App.pro QMAKE_CXX="g++.exe" QMAKE_CC="gcc.exe" QMAKE_LINK="g++.exe"
+          mingw32-make.exe release
           
       - name: Upload Compiled Files
         uses: actions/upload-artifact@v4
